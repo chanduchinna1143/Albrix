@@ -1,33 +1,40 @@
 package com.albrix.Backend.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.albrix.Backend.entity.User;
+import com.albrix.Backend.security.Jwt;
 import com.albrix.Backend.service.UserService;
 
-@Controller
+@RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins="*")
+@CrossOrigin(origins = "*")
 public class AuthController {
-	@Autowired
-	private UserService service;
 	
-	@PostMapping("/register")
-	public User register(@RequestBody User user) {
-		System.out.println("Received user: " + user.getEmail());
-		return service.register(user);
-	}
+    private final UserService service;
+	private final Jwt jwt;
 	
-	@PostMapping("/login")
-	public User login(@RequestBody User user) {
-		return service.login(user.getEmail(), user.getPassword());
-	}
-	
-	
+	 public AuthController(UserService service , Jwt jwt) {
+	        this.service = service;
+	        this.jwt = jwt;
+	 
+	    }
+
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody User user) {
+        service.register(user);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                             .body("User registered successfully");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody User user) {
+        User loggedIn = service.login(user.getEmail(), user.getPassword());
+        String token =jwt.generateToken(loggedIn.getEmail());
+        return ResponseEntity.ok(token);
+    }
 
 }
