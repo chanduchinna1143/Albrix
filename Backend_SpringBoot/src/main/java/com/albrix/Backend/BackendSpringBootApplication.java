@@ -1,4 +1,4 @@
-package com.albrix.Backend_SpringBoot;
+package com.albrix.Backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
