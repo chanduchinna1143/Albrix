@@ -15,7 +15,7 @@ public class Jwt {
     private static final String SECRET =
         "albrix-secret-key-256-bit-length-for-jwt-signing-12345";
 
-    private static final long EXPIRATION_TIME = 3600000;
+    private static final long EXPIRATION_TIME = 360000000;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes());

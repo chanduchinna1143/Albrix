@@ -1,8 +1,8 @@
 package com.albrix.Backend.security;
 
 import java.io.IOException;
+import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,8 +17,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private Jwt jwt;
+    private final Jwt jwt;
+
+    public JwtAuthenticationFilter(Jwt jwt) {
+        this.jwt = jwt;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -28,20 +31,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             String email = jwt.extractEmail(token);
+
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                email, null, null
+                                email,
+                                null,
+                                List.of(() -> "ROLE_USER")
                         );
+
                 authentication.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(request)
                 );
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
+
         filterChain.doFilter(request, response);
     }
 }
