@@ -17,6 +17,7 @@ import com.albrix.Backend.service.ChatService;
 import com.albrix.Backend.service.OllamaService;
 import com.albrix.Backend.service.PromptBuilderService;
 
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/chats")
@@ -30,8 +31,14 @@ public class ChatController {
     private final PromptBuilderService promptBuilderService;
     private final OllamaService ollamaService;
 
-    public ChatController(ChatService chatService,UserRepository userRepository,ChatRepository chatRepository,Jwt jwt,
-            PromptBuilderService promptBuilderService,OllamaService ollamaService) {
+    public ChatController(
+            ChatService chatService,
+            UserRepository userRepository,
+            ChatRepository chatRepository,
+            Jwt jwt,
+            PromptBuilderService promptBuilderService,
+            OllamaService ollamaService) {
+
         this.chatService = chatService;
         this.userRepository = userRepository;
         this.chatRepository = chatRepository;
@@ -41,9 +48,14 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<Chat> createChat(@RequestHeader("Authorization") String authHeader,@RequestBody CreateChatRequest request){
+    public ResponseEntity<Chat> createChat(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody CreateChatRequest request) {
+
         String email = jwt.extractEmail(authHeader.replace("Bearer ", ""));
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         Chat chat = new Chat();
         chat.setUser(user);
         chat.setProjectType(request.getProjectType());
@@ -51,24 +63,37 @@ public class ChatController {
         chat.setFramework(request.getFramework());
         chat.setDatabaseType(request.getDatabaseType());
         chat.setOutputType(request.getOutputType());
+
         return ResponseEntity.ok(chatService.createChat(chat));
     }
-    
+
     @GetMapping
-    public ResponseEntity<List<Chat>> getMyChats(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<List<Chat>> getMyChats(
+            @RequestHeader("Authorization") String authHeader) {
+
         String email = jwt.extractEmail(authHeader.replace("Bearer ", ""));
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         return ResponseEntity.ok(chatService.getUserChats(user));
     }
 
     @GetMapping("/{chatId}")
-    public ResponseEntity<List<Message>> getChatHistory( @RequestHeader("Authorization") String authHeader,@PathVariable Long chatId){
+    public ResponseEntity<List<Message>> getChatHistory(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long chatId) {
+
         String email = jwt.extractEmail(authHeader.replace("Bearer ", ""));
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-        Chat chat = chatRepository.findById(chatId).orElseThrow(() -> new RuntimeException("Chat not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
         if (!chat.getUser().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
         }
+
         return ResponseEntity.ok(chatService.getMessages(chatId));
     }
 
@@ -88,18 +113,59 @@ public class ChatController {
         if (!chat.getUser().getId().equals(user.getId())) {
             return ResponseEntity.status(403).body("Unauthorized");
         }
-
-        // Save USER message
         chatService.saveMessage(chat, "USER", request.getPrompt());
-
-        String finalPrompt = promptBuilderService.buildPrompt(chat, request.getPrompt());
-
-        // ✅ BLOCKING AI CALL (SECURITY CONTEXT SAFE)
+        List<Message> history = chatService.getMessages(chatId);
+        if (history.size() == 1 && chat.getTitle() == null) {
+            String title = generateTitle(request.getPrompt());
+            chat.setTitle(title);
+            chatRepository.save(chat);
+        }
+        String finalPrompt = promptBuilderService.buildPrompt(
+                chat,
+                history,
+                request.getPrompt()
+        );
         String aiResponse = ollamaService.generateBlocking(finalPrompt);
-
-        // Save AI message
         chatService.saveMessage(chat, "AI", aiResponse);
 
         return ResponseEntity.ok(aiResponse);
     }
+    private String generateTitle(String prompt) {
+        String clean = prompt.replaceAll("[^a-zA-Z0-9 ]", "").trim();
+        return clean.length() > 50
+                ? clean.substring(0, 50) + "..."
+                : clean;
+    }
+    @GetMapping(value = "/{chatId}/stream", produces = "text/event-stream")
+    public Flux<String> streamPrompt(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long chatId,
+            @RequestParam String prompt) {
+
+        String email = jwt.extractEmail(authHeader.replace("Bearer ", ""));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+        if (!chat.getUser().getId().equals(user.getId())) {
+            return Flux.error(new RuntimeException("Unauthorized"));
+        }
+
+        // Save user message immediately
+        chatService.saveMessage(chat, "USER", prompt);
+
+        List<Message> history = chatService.getMessages(chatId);
+        String finalPrompt = promptBuilderService.buildPrompt(chat, history, prompt);
+
+        StringBuilder fullResponse = new StringBuilder();
+
+        return ollamaService.generateStream(finalPrompt)
+                .doOnNext(token -> fullResponse.append(token))
+                .doOnComplete(() -> {
+                    // Save AI message when streaming ends
+                    chatService.saveMessage(chat, "AI", fullResponse.toString());
+                });
+    } 
 }

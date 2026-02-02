@@ -1,8 +1,9 @@
 package com.albrix.Backend.dto;
 
 public class CreateChatRequest {
-
-    private String projectType;
+	
+	private String title;
+	private String projectType;
     private String language;
     private String framework;
     private String databaseType;
@@ -36,6 +37,12 @@ public class CreateChatRequest {
 	}
 	public void setOutputType(String outputType) {
 		this.outputType = outputType;
+	}
+	public String getTitle() {
+		return title;
+	}
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
     

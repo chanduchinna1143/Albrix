@@ -10,8 +10,16 @@ public class Chat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(length=100)
+    private String title;
 
-    @ManyToOne
+    public String getTitle() {
+		return title;
+	}
+	public void setTitle(String title) {
+		this.title = title;
+	}
+	@ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
