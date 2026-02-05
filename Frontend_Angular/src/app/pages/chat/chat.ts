@@ -12,40 +12,51 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, FormsModule,RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './chat.html',
 })
 export class Chat {
   prompt = '';
   messages: ChatMessage[] = [];
   loading = false;
-  chatId = 1; 
+  chatId = 1;
   constructor(private http: HttpClient) {}
+  typeText(fullText: string, messageRef: ChatMessage) {
+    let index = 0;
+
+    const interval = setInterval(() => {
+      messageRef.content += fullText.charAt(index);
+      index++;
+
+      if (index >= fullText.length) {
+        clearInterval(interval);
+        this.loading = false;
+      }
+    }, 20);
+  }
   sendPrompt() {
     if (!this.prompt.trim()) return;
-    const userMessage = this.prompt;
     this.messages.push({
       role: 'USER',
-      content: userMessage
+      content: this.prompt
     });
+    const userMessage = this.prompt;
     this.prompt = '';
+    const aiMessage: ChatMessage = {
+      role: 'AI',
+      content: ''
+    };
+    this.messages.push(aiMessage);
     this.loading = true;
     this.http.post(`http://localhost:8080/api/chats/${this.chatId}/message`,
       { prompt: userMessage },
-      { responseType: 'text' } 
+      { responseType: 'text' }
     ).subscribe({
-      next: (aiResponse) => {
-        this.messages.push({
-          role: 'AI',
-          content: aiResponse
-        });
-        this.loading = false;
+      next: (aiResponse: string) => {
+        this.typeText(aiResponse, aiMessage);
       },
       error: () => {
-        this.messages.push({
-          role: 'AI',
-          content: 'Error getting response'
-        });
+        aiMessage.content = 'Error getting response';
         this.loading = false;
       }
     });

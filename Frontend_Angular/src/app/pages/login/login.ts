@@ -31,7 +31,7 @@ export class Login {
         localStorage.setItem('token',res.token);
         console.log('API SUCCESS');
         alert('Signup success');
-        this.router.navigate(['/chat']);
+        this.router.navigate(['/create-chat']);
       },error:(err)=>{
         console.log(err);
       this.error="Invalid credentials";

@@ -1,0 +1,56 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+  <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-lg">
+    <h2 class="text-2xl font-bold mb-6 text-center">
+      Create New Project Chat
+    </h2>
+
+    
+    <select [(ngModel)]="projectType" class="w-full mb-4 p-3 border rounded">
+      <option value="">Select Project Type</option>
+      <option value="WEB_APP">Web Application</option>
+      <option value="API">API / Backend</option>
+      <option value="MOBILE_APP">Mobile App</option>
+    </select>
+
+    
+    <select [(ngModel)]="language" class="w-full mb-4 p-3 border rounded">
+      <option value="">Select Language</option>
+      <option value="Java">Java</option>
+      <option value="JavaScript">JavaScript</option>
+      <option value="Python">Python</option>
+    </select>
+
+    <select [(ngModel)]="framework" class="w-full mb-4 p-3 border rounded">
+      <option value="">Select Framework</option>
+      <option value="Spring Boot">Spring Boot</option>
+      <option value="Angular">Angular</option>
+      <option value="React">React</option>
+    </select>
+
+    <select [(ngModel)]="databaseType" class="w-full mb-4 p-3 border rounded">
+      <option value="">Select Database</option>
+      <option value="MySQL">MySQL</option>
+      <option value="PostgreSQL">PostgreSQL</option>
+      <option value="MongoDB">MongoDB</option>
+    </select>
+
+    <select [(ngModel)]="outputType" class="w-full mb-6 p-3 border rounded">
+      <option value="">Select Output Type</option>
+      <option value="CODE_ONLY">Code Only</option>
+      <option value="EXPLANATION">Explanation</option>
+      <option value="FOLDER_STRUCTURE">Folder Structure</option>
+      <option value="FULL_PROJECT">Full Project</option>
+    </select>
+
+    <button
+      (click)="createChat()"
+      class="w-full bg-black text-white py-3 rounded hover:bg-gray-800"
+    >
+      Create Chat
+    </button>
+
+    <p *ngIf="error" class="text-red-500 mt-4 text-center">
+      {{ error }}
+    </p>
+  </div>
+</div>

@@ -12,8 +12,16 @@
         'bg-blue-600 text-white ml-auto': msg.role === 'USER',
         'bg-gray-200 text-gray-900 mr-auto': msg.role === 'AI'
       }"
-    >
-      {{ msg.content }}
+     >
+      <span *ngIf="msg.role === 'USER'">
+        {{ msg.content }}
+      </span>
+      <pre
+        *ngIf="msg.role === 'AI'"
+        class="whitespace-pre-wrap font-mono text-sm"
+      >
+        {{ msg.content }}
+      </pre>
     </div>
 
     <div *ngIf="loading" class="text-gray-500 italic">
