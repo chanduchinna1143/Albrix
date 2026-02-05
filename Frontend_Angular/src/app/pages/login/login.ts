@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -5,7 +6,7 @@ import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [RouterModule,FormsModule],
+  imports: [RouterModule,FormsModule,CommonModule],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
@@ -22,8 +23,17 @@ export class Login {
     }
     this.loading=true;
     this.error='';
-    this.http.post<any>('http://localhost:8080/api/auth/login',{email:this.email,password:this.password})
-    .subscribe({next:(res)=>{localStorage.setItem('token',res.json);this.router.navigate(['/chats']);},error:()=>{
+    this.http.post<any>('http://localhost:8080/api/auth/login',{
+      email:this.email,
+      password:this.password
+    }).subscribe({
+      next:(res)=>{
+        localStorage.setItem('token',res.token);
+        console.log('API SUCCESS');
+        alert('Signup success');
+        this.router.navigate(['/chat']);
+      },error:(err)=>{
+        console.log(err);
       this.error="Invalid credentials";
       this.loading=false;
     }})

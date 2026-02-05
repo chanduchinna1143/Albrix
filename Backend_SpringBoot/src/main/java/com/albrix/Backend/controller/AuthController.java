@@ -1,6 +1,8 @@
 package com.albrix.Backend.controller;
 
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +36,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody User user) {
         User loggedIn = service.login(user.getEmail(), user.getPassword());
         String token =jwt.generateToken(loggedIn.getEmail());
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(Map.of("token",token));
     }
 
 }
