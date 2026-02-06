@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild ,AfterViewChecked} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 
 interface ChatMessage {
   role: 'USER' | 'AI';
@@ -15,31 +15,86 @@ interface ChatMessage {
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './chat.html',
 })
-export class Chat {
+export class Chat implements OnInit, OnDestroy {
   prompt = '';
   messages: ChatMessage[] = [];
   loading = false;
-  chatId = 1;
-  constructor(private http: HttpClient) {}
+  chatId!: number;
+  isTabActive = true;
+  @ViewChild('bottom') bottom!: ElementRef;
+
+  private typingInterval: any;
+  private visibilityHandler = () => {
+    this.isTabActive = !document.hidden;
+  };
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
+  ) {
+    document.addEventListener('visibilitychange', this.visibilityHandler);
+  }
+  ngOnInit() {
+  this.chatId = Number(this.route.snapshot.paramMap.get('id'));
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.error('No token found');
+    return;
+  }
+
+  this.http.get<ChatMessage[]>(
+    `http://localhost:8080/api/chats/${this.chatId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  ).subscribe({
+    next: (messages) => {
+      this.messages = messages || [];
+      this.cdr.detectChanges();
+      this.scrollToBottom();
+    },
+    error: (err) => {
+      console.error('Failed to load messages', err);
+    }
+  });
+}
+
+
   typeText(fullText: string, messageRef: ChatMessage) {
     let index = 0;
+    this.typingInterval = setInterval(() => {
+      if (!this.isTabActive) {
+        messageRef.content = fullText;
+        clearInterval(this.typingInterval);
+        this.loading = false;
+        this.cdr.detectChanges();
+        return;
+      }
 
-    const interval = setInterval(() => {
       messageRef.content += fullText.charAt(index);
       index++;
+      this.cdr.detectChanges();
 
       if (index >= fullText.length) {
-        clearInterval(interval);
+        clearInterval(this.typingInterval);
         this.loading = false;
+        this.cdr.detectChanges();
       }
-    }, 20);
+
+    }, );
   }
+
   sendPrompt() {
     if (!this.prompt.trim()) return;
+    const token = localStorage.getItem('token');
     this.messages.push({
       role: 'USER',
       content: this.prompt
     });
+
     const userMessage = this.prompt;
     this.prompt = '';
     const aiMessage: ChatMessage = {
@@ -47,10 +102,18 @@ export class Chat {
       content: ''
     };
     this.messages.push(aiMessage);
+
     this.loading = true;
-    this.http.post(`http://localhost:8080/api/chats/${this.chatId}/message`,
+
+    this.http.post(
+      `http://localhost:8080/api/chats/${this.chatId}/message`,
       { prompt: userMessage },
-      { responseType: 'text' }
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        responseType: 'text'
+      }
     ).subscribe({
       next: (aiResponse: string) => {
         this.typeText(aiResponse, aiMessage);
@@ -60,5 +123,21 @@ export class Chat {
         this.loading = false;
       }
     });
+  }
+
+      scrollToBottom() {
+      if (this.bottom) {
+        this.bottom.nativeElement.scrollIntoView({
+          behavior: 'smooth'
+        });
+      }
+    }
+
+
+  ngOnDestroy() {
+    document.removeEventListener('visibilitychange', this.visibilityHandler);
+    if (this.typingInterval) {
+      clearInterval(this.typingInterval);
+    }
   }
 }

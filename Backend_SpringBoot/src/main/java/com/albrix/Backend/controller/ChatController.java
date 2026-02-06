@@ -167,4 +167,23 @@ public class ChatController {
                     chatService.saveMessage(chat, "AI", fullResponse.toString());
                 });
     } 
+    @GetMapping("/{chatId}/messages")
+    public ResponseEntity<List<Message>> getChatMessages(
+            @RequestHeader("Authorization") String authHeader,
+            @PathVariable Long chatId) {
+
+        String email = jwt.extractEmail(authHeader.replace("Bearer ", ""));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat not found"));
+
+        if (!chat.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(chatService.getMessages(chatId));
+    }
+
 }
