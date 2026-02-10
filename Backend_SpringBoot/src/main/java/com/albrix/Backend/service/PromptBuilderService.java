@@ -14,45 +14,46 @@ public class PromptBuilderService {
 
     public String buildPrompt(Chat chat, List<Message> history, String userPrompt) {
 
-        StringBuilder context = new StringBuilder();
-        context.append("""
-        You are a senior software engineer.
+        // FIRST REAL PROMPT → BUILD PROJECT
+        if (history.size() <= 1) {
+            return """
+            You are an expert software developer.
 
-        Project Type: %s
-        Language: %s
-        Framework: %s
-        Database: %s
+            The user wants to build an application with:
+            - Project Type: %s
+            - Language: %s
+            - Framework: %s
+            - Database: %s
+            - Output Type: %s
 
-        """.formatted(
+            Build the application based on the user's request below.
+
+            User request:
+            %s
+            """.formatted(
                 chat.getProjectType(),
                 chat.getLanguage(),
                 chat.getFramework(),
-                chat.getDatabaseType()
-        ));
-        context.append("Conversation so far:\n");
+                chat.getDatabaseType(),
+                chat.getOutputType(),
+                userPrompt
+            );
+        }
 
-        history.stream()
-               .skip(Math.max(0, history.size() - MEMORY_LIMIT))
-               .forEach(msg -> {
-                   context.append(msg.getRole())
-                          .append(": ")
-                          .append(msg.getContent())
-                          .append("\n");
-               });
-        context.append("""
-        
-        Current User Request:
+        // LATER PROMPTS → NORMAL CONVERSATION
+        return """
+        You are continuing an existing software project.
+
+        Respond naturally to the user's message.
+        - If the user is thanking or acknowledging, do not generate code.
+        - If the user asks a question, explain.
+        - If the user asks for changes, update the project.
+        - Do NOT repeat full project structure unless asked.
+
+        User message:
         %s
-
-        %s
-        """.formatted(
-                userPrompt,
-                resolveOutputType(chat.getOutputType())
-        ));
-
-        return context.toString();
+        """.formatted(userPrompt);
     }
-
     private String resolveOutputType(String outputType) {
 
         return switch (outputType) {

@@ -119,6 +119,13 @@ public class ChatController {
             chat.setTitle(title);
             chatRepository.save(chat);
         }
+        String text = request.getPrompt().toLowerCase().trim();
+
+        if (text.matches("^(thanks|thank you|ok|okay|cool|nice|great|got it)$")) {
+            chatService.saveMessage(chat, "USER", request.getPrompt());
+            return ResponseEntity.ok("You're welcome 😊");
+        }
+
         String finalPrompt = promptBuilderService.buildPrompt(
                 chat,
                 history,

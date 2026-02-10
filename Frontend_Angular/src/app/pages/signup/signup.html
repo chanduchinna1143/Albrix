@@ -1,40 +1,57 @@
-<div class="min-h-screen flex items-center justify-center bg-gray-100">
-  <div class="bg-white p-8 rounded-lg shadow w-full max-w-md">
-
-    <h2 class="text-2xl font-bold mb-6 text-center">Sign Up</h2>
-
+<div
+    *ngIf="toastMessage"
+    class="fixed top-6 right-6
+           px-4 py-3 rounded-lg
+           bg-white text-black
+           border border-neutral-700
+           shadow-lg z-50">
+    {{ toastMessage }}
+  </div>
+<div class="min-h-screen flex items-center justify-center bg-black text-white">
+  <div class="w-full max-w-md p-8 rounded-lg  border border-neutral-700  bg-neutral-900">
+    <h2 class="text-2xl font-semibold mb-6 text-center">
+      Sign Up
+    </h2>
     <input
       [(ngModel)]="name"
       type="text"
       placeholder="Name"
-      class="w-full mb-4 px-4 py-2 border rounded-lg"
+      class="w-full mb-4 px-4 py-2 rounded-lg bg-black text-white border border-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-white"
     />
-
     <input
       [(ngModel)]="email"
       type="email"
       placeholder="Email"
-      class="w-full mb-4 px-4 py-2 border rounded-lg"
+      class="w-full mb-4 px-4 py-2 rounded-lg bg-black text-white border border-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-white"
     />
-
     <input
       [(ngModel)]="password"
       type="password"
       placeholder="Password"
-      class="w-full mb-4 px-4 py-2 border rounded-lg"
+      class="w-full mb-6 px-4 py-2 rounded-lg bg-black text-white border border-neutral-700 placeholder-neutral-400 focus:outline-none focus:ring-1 focus:ring-white"
     />
-
-    @if (error) {
-      <div class="text-red-500 mb-3">{{ error }}</div>
-    }
-
     <button
-      (click)="signup()"
-      [disabled]="loading"
-      class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
-    >
-      {{ loading ? 'Creating account...' : 'Sign Up' }}
-    </button>
+        (click)="signup()"
+        [disabled]="loading"
+        class="w-full py-2 rounded-lg
+              border border-neutral-600
+              bg-white text-black
+              transition
+              disabled:opacity-50
+              disabled:cursor-not-allowed"
+      >
+        {{ loading ? 'Creating account…' : 'Sign Up' }}
+      </button>
+      <p class="mt-4 text-sm text-center text-neutral-400">
+        Already have an account?
+        <a
+          routerLink="/login"
+          class="text-white underline hover:text-neutral-300 transition">
+          Log in
+        </a>
+      </p>
+
 
   </div>
+
 </div>
