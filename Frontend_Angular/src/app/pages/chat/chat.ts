@@ -153,12 +153,12 @@ export class Chat implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
 
-    }, 20);
+    }, 1);
   }
   scrollToBottom() {
     if (this.bottom) {
       this.bottom.nativeElement.scrollIntoView({
-        behavior: 'smooth'
+        behavior:'smooth'
       });
     }
   }

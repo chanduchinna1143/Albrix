@@ -22,42 +22,45 @@ export class Login {
     private cdr: ChangeDetectorRef
   ) {}
 
-  login() {
-    if (!this.email || !this.password) {
-      this.showToast('Email and password are required');
-      return;
-    }
-
-    this.loading = true;
-
-    this.http.post<any>(
-      'http://localhost:8080/api/auth/login',
-      {
-        email: this.email,
-        password: this.password
-      }
-    ).subscribe({
-      next: (res) => {
-        this.loading = false;
-        localStorage.setItem('token', res.token);
-        this.showToast('Login successful');
-        setTimeout(() => {
-          this.router.navigate(['/chat']);
-        }, 1000);
-      },
-      error: (err) => {
-        this.loading = false;
-        console.error(err);
-        if (err.status === 404) {
-          this.showToast('Email not found');
-        } else if (err.status === 401 || err.status === 403) {
-          this.showToast('Password is incorrect');
-        } else {
-          this.showToast('Login failed. Please try again.');
-        }
-      }
-    });
+ login() {
+  if (!this.email || !this.password) {
+    this.showToast('Email and password are required');
+    return;
   }
+
+  this.loading = true;
+
+  this.http.post<any>(
+    'http://localhost:8080/api/auth/login',
+    {
+      email: this.email,
+      password: this.password
+    }
+  ).subscribe({
+    next: (res) => {
+      this.loading = false;
+      localStorage.setItem('token', res.token);
+      this.showToast('Login successful');
+      setTimeout(() => {
+        this.router.navigate(['/chat']);
+      }, 1000);
+    },
+    error: (err) => {
+      this.loading = false;
+
+      if (err.status === 404) {
+        this.showToast('Account not found. Please sign up.');
+      } else if (err.status === 401) {
+        this.showToast('Password is incorrect.');
+      } else if (err.status === 403) {
+        this.showToast('Invalid credentials.');  
+      } else {
+        this.showToast('Login failed. Please try again.');
+      }
+    }
+  });
+}
+
   showToast(message: string) {
     this.toastMessage = message;
     this.cdr.detectChanges();

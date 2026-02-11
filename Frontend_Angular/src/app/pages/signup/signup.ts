@@ -26,38 +26,47 @@ export class Signup {
   ) {}
 
   signup() {
-    console.log('SIGNUP FUNCTION CALLED');
-    if (!this.name || !this.email || !this.password) {
-      this.showToast('All fields are required');
-      return;
+  console.log('SIGNUP FUNCTION CALLED');
+
+  if (!this.name || !this.email || !this.password) {
+    this.showToast('All fields are required');
+    return;
+  }
+
+  this.loading = true;
+
+  this.http.post(
+    'http://localhost:8080/api/auth/register',
+    {
+      name: this.name,
+      email: this.email,
+      password: this.password
+    },
+    {
+      observe: 'response',
+      responseType: 'text'
     }
-    this.loading = true;
-    this.http.post(
-      'http://localhost:8080/api/auth/register',
-      {
-        name: this.name,
-        email: this.email,
-        password: this.password
-      },
-      {
-        observe: 'response',
-        responseType: 'text'
-      }
-    ).subscribe({
-      next: () => {
-        console.log('API SUCCESS');
-        this.loading = false;
-        this.showToast('Account created successfully');
-        setTimeout(() => {
-          this.router.navigateByUrl('/login');
-        }, 1500);
-      },
-      error: (err) => {
-        console.error(err);
-        this.loading = false;
+  ).subscribe({
+    next: () => {
+      this.loading = false;
+      this.showToast('Account created successfully');
+
+      setTimeout(() => {
+        this.router.navigateByUrl('/login');
+      }, 1500);
+    },
+    error: (err) => {
+      this.loading = false;
+
+      if (err.status === 409) {
+        this.showToast('Account detected. Please login.');
+      } else if (err.status === 400) {
+        this.showToast('Invalid data submitted.');
+      } else {
         this.showToast('Sign Up Failed. Please try again.');
       }
-    });
+    }
+  });
   }
 
   showToast(message: string) {
